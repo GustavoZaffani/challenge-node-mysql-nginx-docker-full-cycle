@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: challenge-mysql
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    networks:
+      - challenge
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+
+  app:
+    build:
+      context: ./node
+    image: gustavozaffani/challenge-node:latest
+    container_name: challenge-node
+    networks:
+      - challenge
+    tty: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    build:
+      context: ./nginx
+    image: gustavozaffani/challenge-nginx:latest
+    container_name: challenge-nginx
+    networks:
+      - challenge
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+
+networks:
+  challenge:
+    driver: bridge
