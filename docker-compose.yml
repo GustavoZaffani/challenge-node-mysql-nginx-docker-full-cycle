@@ -29,6 +29,7 @@ services:
       - challenge
     volumes:
       - ./node:/usr/src/app
+      - /usr/src/app/node_modules
     tty: true
     depends_on:
       db:
